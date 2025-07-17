@@ -6,6 +6,10 @@ from .chat_rooms import create_room, join_room, get_room_users
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Chat API is running. See /docs for API documentation."}
+
 @app.post("/register")
 async def register(request: Request):
     data = await request.json()
