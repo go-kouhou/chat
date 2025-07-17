@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>チャットウィジェット（Render用）</title>
+  <style>
+    #chat-box { display:none; border:1px solid #ccc; padding:10px; width:300px; height:300px; overflow-y:auto; }
+    #chat-input, #chat-user { width:140px; }
+    #chat-send { width:60px; }
+  </style>
+</head>
+<body>
+  <button id="open-chat">チャット開始</button>
+  <div id="chat-box">
+    <div>ユーザー名: <input id="chat-user" type="text" placeholder="名前"></div>
+    <div id="chat-messages"></div>
+    <input id="chat-input" type="text" placeholder="メッセージ...">
+    <button id="chat-send">送信</button>
+    <button id="chat-history">履歴取得</button>
+  </div>
+  <script>
+    let ws;
+    let roomId = "room1"; // 必要に応じて変更可
+    document.getElementById('open-chat').onclick = function() {
+      document.getElementById('chat-box').style.display = 'block';
+      this.style.display = 'none';
+      ws = new WebSocket('wss://chat-aud1.onrender.com/ws/' + roomId);
+      ws.onmessage = function(event) {
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = event.data;
+        document.getElementById('chat-messages').appendChild(msgDiv);
+      };
+    };
+    document.getElementById('chat-send').onclick = function() {
+      const input = document.getElementById('chat-input');
+      const user = document.getElementById('chat-user').value || "匿名";
+      if(ws && input.value) {
+        ws.send(JSON.stringify({user: user, message: input.value}));
+        // 送信直後に自分のメッセージも表示
+        const msgDiv = document.createElement('div');
+        msgDiv.textContent = `${user}: ${input.value}`;
+        document.getElementById('chat-messages').appendChild(msgDiv);
+        input.value = '';
+      }
+    };
+    document.getElementById('chat-history').onclick = function() {
+      fetch('https://chat-aud1.onrender.com/room/' + roomId + '/messages')
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('chat-messages').innerHTML = '';
+          data.messages.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = `${msg.user}: ${msg.message}`;
+            document.getElementById('chat-messages').appendChild(msgDiv);
+          });
+        });
+    };
+  </script>
+</body>
+</html>
